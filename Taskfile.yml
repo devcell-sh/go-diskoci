@@ -1,0 +1,34 @@
+version: '3'
+
+tasks:
+  test:
+    desc: Run all tests (conversion tests self-skip when qemu-img is absent)
+    cmds:
+      - go test ./...
+
+  vet:
+    desc: Static checks
+    cmds:
+      - go vet ./...
+
+  tidy:
+    desc: Tidy module dependencies
+    cmds:
+      - go mod tidy
+
+  build:
+    desc: Build ./bin/diskoci
+    cmds:
+      - go build -o ./bin/diskoci ./cmd/diskoci
+
+  install:
+    desc: Build + copy ./bin/diskoci → ~/.local/bin/diskoci
+    deps: [build]
+    silent: true
+    cmds:
+      - mkdir -p ~/.local/bin
+      - cp ./bin/diskoci ~/.local/bin/diskoci
+      # Re-apply xattr at the destination — OS provenance is path-keyed
+      # (same dance as devcell's cell:install).
+      - '[ "$(uname -s)" != "Darwin" ] || xattr -c ~/.local/bin/diskoci'
+      - echo "installed ~/.local/bin/diskoci"
